@@ -1,0 +1,37 @@
+#!/usr/local/bin/php
+<?php
+
+use Sebihojda\Mbp\Command\ArgumentConverter\CsvColumnSignArgumentConverter;
+use Sebihojda\Mbp\Command\CommandProcessorLocator;
+use Sebihojda\Mbp\IO\CsvReader;
+use Sebihojda\Mbp\IO\CsvWriter;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+// get the name of the currently executed tool
+$tool = basename($argv[0]);
+
+try {
+    // initialize the CLI options parsing
+    CsvColumnSignArgumentConverter::initOptions();
+
+    // read from input streams into data tables
+    $inputTables = [];
+    foreach (CsvColumnSignArgumentConverter::getInputStreams() as $inputStream) {
+        $inputTables[] = CsvReader::read($inputStream);
+    }
+
+    // execute the column signing processor
+    $processor = new CommandProcessorLocator()->getProcessorByTool($tool);
+    $config = CsvColumnSignArgumentConverter::extractTableProcessorConfig();
+    $outputTables = $processor->configure($config)->process(...$inputTables);
+
+    // write the resulted output tables to output streams
+    $outputStream = CsvColumnSignArgumentConverter::getOutputStreams()[0];
+    foreach ($outputTables as $outputTable) {
+        CsvWriter::write($outputTable, $outputStream);
+    }
+} catch (Throwable $e) {
+    echo $e->getMessage().PHP_EOL;
+    exit(1);
+}

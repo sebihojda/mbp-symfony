@@ -1,0 +1,43 @@
+#!/usr/local/bin/php
+<?php
+
+use Sebihojda\Mbp\Command\CommandProcessorLocator;
+use Sebihojda\Mbp\IO\CsvReader;
+use Sebihojda\Mbp\IO\CsvWriter;
+use Sebihojda\Mbp\IO\JsonWriter;
+use Sebihojda\Mbp\Command\ArgumentConverter\CsvDateReformatArgumentConverter;
+use Sebihojda\Mbp\TableProcessor\Config\DateReformatConfig;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+// get the name of the currently executed tool
+$tool = basename($argv[0]);
+
+try {
+    // initialize the CLI options parsing
+    CsvDateReformatArgumentConverter::initOptions();
+
+    // read from input streams into data tables
+    $inputTables = [];
+    foreach (CsvDateReformatArgumentConverter::getInputStreams() as $inputStream) {
+        $inputTables[] = CsvReader::read($inputStream, false);
+    }
+
+    // execute the prepended header logic on all input tables
+    $processor = new CommandProcessorLocator()->getProcessorByTool($tool);
+    $config = CsvDateReformatArgumentConverter::extractTableProcessorConfig();
+    $outputTables = $processor->configure($config)->process(...$inputTables);
+
+    // write the resulted outputTables to output streams
+    $outputStream = CsvDateReformatArgumentConverter::getOutputStreams()[0];
+    foreach ($outputTables as $outputTable) {
+        if ($config->getOutputFormat() === DateReformatConfig::OUTPUT_FORMAT_CSV) {
+            CsvWriter::write($outputTable, $outputStream);
+        } elseif ($config->getOutputFormat() === DateReformatConfig::OUTPUT_FORMAT_JSON) {
+            JsonWriter::write($outputTable, $outputStream);
+        }
+    }
+} catch (Throwable $e) {
+    echo $e->getMessage().PHP_EOL;
+    exit(1);
+}

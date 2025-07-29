@@ -1,0 +1,41 @@
+#!/usr/local/bin/php
+<?php
+
+use Sebihojda\Mbp\Command\ArgumentConverter\CsvMergeArgumentConverter;
+use Sebihojda\Mbp\Command\CommandProcessorLocator;
+use Sebihojda\Mbp\IO\CsvReader;
+use Sebihojda\Mbp\IO\CsvWriter;
+
+require_once __DIR__.'/../vendor/autoload.php';
+
+// get the name of the currently executed tool
+$tool = basename($argv[0]);
+
+try {
+    // initialize the CLI options parsing
+    CsvMergeArgumentConverter::initOptions();
+
+    // read the input files into model objects
+    $inputTables = [];
+    foreach (CsvMergeArgumentConverter::getInputStreams() as $inputStream) {
+        $inputTables[] = CsvReader::readClose($inputStream, CsvMergeArgumentConverter::hasIgnoreHeaders());
+    }
+
+    // execute the merge processing
+    $processor = new CommandProcessorLocator()->getProcessorByTool($tool);
+    $outputTables = $processor->process(...$inputTables);
+
+    // write the results to output
+    $outputStreams = CsvMergeArgumentConverter::getOutputStreams();
+    foreach ($outputTables as $index => $outputTable) {
+        $outputStream = $outputStreams[$index] ?? STDOUT;
+        if ($outputStream !== STDOUT) {
+            CsvWriter::writeClose($outputTable, $outputStream);
+        } else {
+            CsvWriter::write($outputTable, $outputStream);
+        }
+    }
+} catch (Throwable $e) {
+    echo $e->getMessage().PHP_EOL;
+    exit(1);
+}

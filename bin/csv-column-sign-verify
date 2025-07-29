@@ -1,0 +1,37 @@
+#!/usr/local/bin/php
+<?php
+
+use Sebihojda\Mbp\Command\ArgumentConverter\CsvColumnSignVerifyArgumentConverter;
+use Sebihojda\Mbp\Command\CommandProcessorLocator;
+use Sebihojda\Mbp\IO\CsvReader;
+use Sebihojda\Mbp\IO\CsvWriter;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+// get the name of the currently executed tool
+$tool = basename($argv[0]);
+
+try {
+    // initialize the CLI options parsing
+    CsvColumnSignVerifyArgumentConverter::initOptions();
+
+    // read from input streams into data tables
+    $inputTables = [];
+    foreach (CsvColumnSignVerifyArgumentConverter::getInputStreams() as $inputStream) {
+        $inputTables[] = CsvReader::read($inputStream);
+    }
+
+    // execute the signature verification and removal processor
+    $processor = new CommandProcessorLocator()->getProcessorByTool($tool);
+    $config = CsvColumnSignVerifyArgumentConverter::extractTableProcessorConfig();
+    $outputTables = $processor->configure($config)->process(...$inputTables);
+
+    // write the resulted output tables to output streams
+    $outputStream = CsvColumnSignVerifyArgumentConverter::getOutputStreams()[0];
+    foreach ($outputTables as $outputTable) {
+        CsvWriter::write($outputTable, $outputStream);
+    }
+} catch (Throwable $e) {
+    echo $e->getMessage().PHP_EOL;
+    exit(1);
+}

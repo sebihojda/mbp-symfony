@@ -1,0 +1,43 @@
+#!/usr/local/bin/php
+<?php
+
+use Sebihojda\Mbp\Command\ArgumentConverter\CsvRowIndexerArgumentConverter;
+use Sebihojda\Mbp\Command\CommandProcessorLocator;
+use Sebihojda\Mbp\IO\CsvReader;
+use Sebihojda\Mbp\IO\CsvWriter;
+use Sebihojda\Mbp\IO\JsonWriter;
+use Sebihojda\Mbp\TableProcessor\Config\OutputFormatConfig;
+
+require_once __DIR__.'/../vendor/autoload.php';
+
+// get the name of the currently executed tool
+$tool = basename($argv[0]);
+
+try {
+    // initialize the CLI options parsing
+    CsvRowIndexerArgumentConverter::initOptions();
+
+    // read from input streams into data tables
+    $inputTables = [];
+    foreach (CsvRowIndexerArgumentConverter::getInputStreams() as $inputStream) {
+        $inputTables[] = CsvReader::read($inputStream, false);
+    }
+
+    // execute the prepended header logic on all input tables
+    $processor = new CommandProcessorLocator()->getProcessorByTool($tool);
+    $config = CsvRowIndexerArgumentConverter::extractTableProcessorConfig();
+    $outputTables = $processor->configure($config)->process(...$inputTables);
+
+    // write the resulted outputTables to output streams
+    $outputStream = CsvRowIndexerArgumentConverter::getOutputStreams()[0];
+    foreach ($outputTables as $outputTable) {
+        if ($config->getOutputFormat() === OutputFormatConfig::OUTPUT_FORMAT_CSV) {
+            CsvWriter::write($outputTable, $outputStream);
+        } elseif ($config->getOutputFormat() === OutputFormatConfig::OUTPUT_FORMAT_JSON) {
+            JsonWriter::write($outputTable, $outputStream);
+        }
+    }
+} catch (Throwable $e) {
+    echo $e->getMessage().PHP_EOL;
+    exit(1);
+}
