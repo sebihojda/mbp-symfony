@@ -110,4 +110,17 @@ readonly class DataRow extends DataTableRow
         }
         return new static($map);
     }
+
+    /**
+     * Creates another row from the current one with a new value for a given column.
+     */
+    public function withColumnValue(string $column, mixed $value): static
+    {
+        Assert::true($this->row->hasKey($column), "Column '{$column}' does not exist.");
+
+        $map = $this->row->copy();
+        $map->put($column, $value);
+
+        return new static($map);
+    }
 }

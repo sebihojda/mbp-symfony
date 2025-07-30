@@ -1,0 +1,5 @@
+user_id,name,city,order_id,customer_id,product
+1,"Mihai Popescu",Cluj-Napoca,101,1,Laptop
+1,"Mihai Popescu",Cluj-Napoca,103,1,Tastatura
+2,"Elena Ionescu",Bucuresti,102,2,Mouse
+4,"Ioana Radu",Iasi,104,4,Monitor
