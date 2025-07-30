@@ -20,11 +20,21 @@ class DateReformat  implements TableProcessorInterface, ConfigurableInterface
      */
     public function process(DataTable ...$tables): array
     {
-        $dateColumn = $this->config->getColumn(); // must verify/validate the column
-        $dateFormat = $this->config->getDateFormat(); // must verify/validate the format
+        $dateColumn = $this->config->getColumn();
+        $dateFormat = $this->config->getDateFormat();
         $results = [];
         foreach ($tables as $table) {
             $headers = $table->getHeaderRow()->copy();
+            $exists = false;
+            foreach ($headers->toArray() as $header) {
+                if($header == $dateColumn){
+                    $exists = true;
+                    break;
+                }
+            }
+            if(!$exists){
+                throw new InvalidArgumentException("Invalid column name: $dateColumn");
+            }
             $result = DataTable::createEmpty($headers);
             /** @var DataRow|HeaderRow $row */
             foreach ($table->getDataRowsIterator() as $i => $row) {

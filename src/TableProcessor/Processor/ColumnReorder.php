@@ -20,10 +20,12 @@ class ColumnReorder implements TableProcessorInterface, ConfigurableInterface
         $columnsOrder = $this->config->getColumnsOrder();
         $results = [];
         foreach ($tables as $table) {
-            //$headers = $table->getHeaderRow();
+            $headers = $table->getHeaderRow()->toArray();
+            if(array_diff($headers, $columnsOrder))
+                throw new InvalidArgumentException("Columns order not matching the header columns!");
             $result = DataTable::createEmpty($columnsOrder);
             /** @var DataRow|HeaderRow $row */
-            foreach ($table->getDataRowsIterator() as $i => $row) {
+            foreach ($table->getDataRowsIterator() as $row) {
                 $orderedRow = $row->withColumnReorder($columnsOrder);
                 $result->appendRow($orderedRow);
             }

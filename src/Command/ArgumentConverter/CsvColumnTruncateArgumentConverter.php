@@ -24,8 +24,7 @@ class CsvColumnTruncateArgumentConverter extends PipingCompatibleArgumentConvert
 
         $length = $options['l'] ?? $options['length'];
 
-
-        if (null === $column && null === $length) {
+        if (null === $column || null === $length) {
             throw new InvalidArgumentException('The column name and the length must be provided');
         }
 

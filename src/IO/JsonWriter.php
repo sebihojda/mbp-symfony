@@ -28,6 +28,9 @@ final class JsonWriter
         }
     }
 
+    /**
+     * @throws JsonException
+     */
     public static function writeClose(DataTable $table, $outputStream): void
     {
         self::write($table, $outputStream);

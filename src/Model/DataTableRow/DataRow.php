@@ -16,10 +16,10 @@ use Carbon\Carbon;
 /**
  * Models a data table data row.
  */
-class DataRow extends DataTableRow
+readonly class DataRow extends DataTableRow
 {
     private function __construct(
-        private readonly Map $row,
+        private Map $row,
     ) {
         //
     }

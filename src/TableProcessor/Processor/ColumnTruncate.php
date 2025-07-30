@@ -17,14 +17,27 @@ class ColumnTruncate implements TableProcessorInterface, ConfigurableInterface
 
     public function process(DataTable ...$tables): array
     {
-        $columnToTruncate = $this->config->getColumn(); // must verify/validate the column
-        $length = $this->config->getLength(); // must verify/validate the length
+        $columnToTruncate = $this->config->getColumn();
+        $length = $this->config->getLength();
+        if(!(is_numeric($length) && (int)$length > 0)){
+            throw new InvalidArgumentException("Invalid column length: $length");
+        }
         $results = [];
         foreach ($tables as $table) {
             $headers = $table->getHeaderRow()->copy();
+            $exists = false;
+            foreach ($headers->toArray() as $header) {
+                if($header == $columnToTruncate){
+                    $exists = true;
+                    break;
+                }
+            }
+            if(!$exists){
+                throw new InvalidArgumentException("Invalid column name: $columnToTruncate");
+            }
             $result = DataTable::createEmpty($headers);
             /** @var DataRow|HeaderRow $row */
-            foreach ($table->getDataRowsIterator() as $i => $row) {
+            foreach ($table->getDataRowsIterator() as $row) {
                 $truncatedRow = $row->withColumnTruncate($columnToTruncate, $length);
                 $result->appendRow($truncatedRow);
             }

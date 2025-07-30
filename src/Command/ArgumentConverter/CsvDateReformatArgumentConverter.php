@@ -24,7 +24,7 @@ class CsvDateReformatArgumentConverter  extends PipingCompatibleArgumentConverte
         $format = $options['f'] ?? $options['date-format'];
 
 
-        if (null === $column && null === $format) {
+        if (null === $column || null === $format) {
             throw new InvalidArgumentException('The column name and the format must be provided');
         }
 

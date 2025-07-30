@@ -2,6 +2,7 @@
 
 namespace Sebihojda\Mbp\TableProcessor\Processor;
 
+use InvalidArgumentException;
 use Sebihojda\Mbp\Model\DataTable;
 use Sebihojda\Mbp\Model\DataTableRow\DataRow;
 use Sebihojda\Mbp\Model\DataTableRow\HeaderRow;
@@ -16,13 +17,32 @@ class ColumnRemove implements TableProcessorInterface, ConfigurableInterface
 
     public function process(DataTable ...$tables): array
     {
-        $columnToBeRemoved = $this->config->getColumn(); // must verify/validate the column/index
+        $columnToBeRemoved = $this->config->getColumn();
         $results = [];
         foreach ($tables as $table) {
-            $headers = $table->getHeaderRow()->withRemovedColumn($columnToBeRemoved);
-            $result = DataTable::createEmpty($headers);
+            $headers = $table->getHeaderRow();
+            if(is_numeric($columnToBeRemoved)){
+                if($headers->offsetExists((int)$columnToBeRemoved)){ // $columnToBeRemoved >= 0 && $columnToBeRemoved < count($headers)
+                    $columnToBeRemoved = $headers->offsetGet((int)$columnToBeRemoved);
+                }else{
+                    throw new InvalidArgumentException("Invalid column number: $columnToBeRemoved");
+                }
+            }else{
+                $exists = false;
+                foreach ($headers->toArray() as $header) {
+                    if($header == $columnToBeRemoved){
+                        $exists = true;
+                        break;
+                    }
+                }
+                if(!$exists){
+                    throw new InvalidArgumentException("Invalid column name: $columnToBeRemoved");
+                }
+            }
+            $newHeaders = $table->getHeaderRow()->withRemovedColumn($columnToBeRemoved);
+            $result = DataTable::createEmpty($newHeaders);
             /** @var DataRow|HeaderRow $row */
-            foreach ($table->getDataRowsIterator() as $i => $row) {
+            foreach ($table->getDataRowsIterator() as $row) {
                 $orderedRow = $row->withRemovedColumn($columnToBeRemoved);
                 $result->appendRow($orderedRow);
             }
